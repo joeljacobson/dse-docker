@@ -1,7 +1,3 @@
-# Provided without any warranty, these files are intended 
-# to accompany the whitepaper about DSE on Docker and are 
-# not intended for production and are not actively maintained.
-
 Download the opscenter tar ball, the dse tar ball and the datastax agent 
 debian package. The docker files expect filenames to not have versions
 so either change the docker files, rename the downloaded files or
