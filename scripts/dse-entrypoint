@@ -1,0 +1,115 @@
+#!/bin/sh
+
+# Provided without any warranty, these files are intended
+# to accompany the whitepaper about DSE on Docker and are 
+# not intended for production and are not actively maintained.
+
+# Bind the various services
+# These should be updated on every container start
+
+if [ -z ${IP} ]; then
+  IP=`hostname --ip-address`
+fi
+
+echo $IP > /data/ip.address
+
+# create directories for holding the node's data, logs, etc.
+create_dirs() {
+  local base_dir=$1;
+
+  mkdir -p $base_dir/data/commitlog
+  mkdir -p $base_dir/data/saved_caches
+  mkdir -p $base_dir/data/hints
+  mkdir -p $base_dir/logs
+}
+
+# tweak the cassandra config
+tweak_cassandra_config() {
+  env="$1/cassandra-env.sh"
+  conf="$1/cassandra.yaml"
+
+  base_data_dir="/data"
+
+  # Set the cluster name
+  if [ -z "${CLUSTER_NAME}" ]; then
+    printf " - No cluster name provided; skipping.\n"
+  else
+    printf " - Setting up the cluster name: ${CLUSTER_NAME}\n"
+    regexp="s/Test Cluster/${CLUSTER_NAME}/g"
+    sed -i -- "$regexp" $conf
+  fi
+
+  # Set the commitlog directory, and various other directories
+  # These are done only once since the regexep matches will fail on subsequent
+  # runs.
+  printf " - Setting up directories\n"
+  regexp="s|/var/lib/cassandra/|$base_data_dir/|g"
+  sed -i -- "$regexp" $conf
+  regexp="s/^listen_address:.*/listen_address: ${IP}/g"
+  sed -i -- "$regexp" $conf
+  regexp="s/rpc_address:.*/rpc_address: ${IP}/g"
+  sed -i -- "$regexp" $conf
+
+  # seeds
+  if [ -z "${SEEDS}" ]; then
+    printf " - Using own IP address ${IP} as seed.\n";
+    regexp="s/seeds:.*/seeds: \"${IP}\"/g";
+  else
+    printf " - Using seeds: $SEEDS\n";
+    regexp="s/seeds:.*/seeds: \"${IP},${SEEDS}\"/g"
+  fi
+  sed -i -- "$regexp" $conf
+
+  # JMX
+  echo "JVM_OPTS=\"\$JVM_OPTS -Djava.rmi.server.hostname=127.0.0.1\"" >> $env
+}
+
+tweak_dse_in_sh() {
+  # point C* logs dir to the created volume
+  sed -i -- "s|/var/log/cassandra|/logs|g" "$1/dse.in.sh"
+}
+
+tweak_spark_config() {
+  sed -i -- "s|/var/lib/spark/|/data/spark/|g" "$1/spark-env.sh"
+  sed -i -- "s|/var/log/spark/|/logs/spark/|g" "$1/spark-env.sh"
+  mkdir -p /data/spark/worker
+  mkdir -p /data/spark/rdd
+  mkdir -p /logs/spark/worker
+}
+
+tweak_agent_config() {
+  [ -d "/var/lib/datastax-agent" ] && cat > /var/lib/datastax-agent/conf/address.yaml <<EOF
+stomp_interface: ${STOMP_INTERFACE}
+use_ssl: 0
+local_interface: ${IP}
+hosts: ["${IP}"]
+cassandra_install_location: /opt/dse
+cassandra_log_location: /logs
+EOF
+  chown cassandra:cassandra /var/lib/datastax-agent/conf/address.yaml
+}
+
+setup_node() {
+  printf "* Setting up node...\n"
+  printf " + Setting up node...\n"
+
+  create_dirs
+  tweak_cassandra_config "$DSE_HOME/resources/cassandra/conf"
+  tweak_dse_in_sh "$DSE_HOME/bin"
+  tweak_spark_config "$DSE_HOME/resources/spark/conf"
+  tweak_agent_config
+  chown -R cassandra:cassandra /data /logs /conf
+  
+  # mark that we tweaked configs
+  touch "$DSE_HOME/tweaked_configs"
+
+  printf "Done.\n"
+}
+
+# if marker file doesn't exist, setup node
+[ ! -f "$DSE_HOME/tweaked_configs" ] && setup_node
+
+[ -f "/etc/init.d/datastax-agent" ] && /etc/init.d/datastax-agent start
+
+exec gosu cassandra "$DSE_HOME/bin/dse" cassandra -f "$@"
+

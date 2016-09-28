@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Provided without any warranty, these files are intended
+# to accompany the whitepaper about DSE on Docker and are 
+# not intended for production and are not actively maintained.
+
+cmd=$(basename $0)
+
+# prefer the command in DSE_HOME/bin
+full_cmd_path=$(find -L "$DSE_HOME/bin" "$DSE_HOME" -type f -name $cmd | head -1)
+
+export CQLSH_HOST="$(hostname --ip-address)"
+
+exec gosu cassandra "$full_cmd_path" "$@"
+

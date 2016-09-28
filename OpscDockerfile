@@ -1,0 +1,30 @@
+# build the image and run it as
+#
+# docker run -d opscenter
+#
+# then open in the browser http://OPSCENTER_CONTAINER_IP_ADDRESS:8888
+
+FROM nimmis/java:oracle-8-jdk
+
+RUN export DEBIAN_FRONTEND=noninteractive && \
+    apt-get update && \
+    apt-get -y install adduser \
+    curl \
+    lsb-base \
+    procps \
+    zlib1g \
+    gzip \
+    python \
+    python-support \
+    ntp bash tree && \
+    rm -rf /var/lib/apt/lists/*
+
+ADD opscenter.tar.gz /opt
+
+RUN ln -s /opt/ops* /opt/opscenter
+
+EXPOSE 8888 50031 61620
+
+ENTRYPOINT ["/opt/opscenter/bin/opscenter"]
+
+CMD ["-f"]
