@@ -6,6 +6,7 @@ http://downloads.datastax.com/enterprise. You will require a free, DataStax Acad
 You can sign up for a DataStax Academy account at;
 https://academy.datastax.com
 
+
 If you would like to retrieve the downloads as part of the Docker build;
 Edit the files;
 Dockerfile
