@@ -19,6 +19,17 @@ RUN export DEBIAN_FRONTEND=noninteractive && \
     ntp bash tree && \
     rm -rf /var/lib/apt/lists/*
 
+# DSE tarball can be download into the folder where Dockerfile is
+# Run this command prior to building the container. Eg. the file should exist already.
+# wget --user=$USER --password=$PASSWORD http://downloads.datastax.com/enterprise/opscenter-6.0.3.tar.gz
+#
+# you may want to replace opscenter-6.0.3.tar.gz with the corresponding downloaded package name. When
+# downloaded, please remove the version number part of the filename (or create a symlink), so the
+# resulting file is named opscenter.tar.gz (that way the docker file itself remains version independent).
+#
+# Run this command prior to building the container. Eg. the file should exist already.
+# ln -s opscenter-6.0.3.tar.gz opscenter.tar.gz 
+#
 ADD opscenter.tar.gz /opt
 
 RUN ln -s /opt/ops* /opt/opscenter

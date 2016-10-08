@@ -34,17 +34,26 @@ RUN curl -o /bin/gosu -SkL "https://github.com/tianon/gosu/releases/download/1.4
 
 
 # DSE tarball can be download into the folder where Dockerfile is
-# wget --user=$USER --password=$PASS http://downloads.datastax.com/enterprise/dse-5.0.0-bin.tar.gz
-# you may want to replace dse-5.0.0-bin.tar.gz with the corresponding downloaded package name. When
+# Run this command prior to building the container. Eg. the file should exist already. 
+# wget --user=$USER --password=$PASS http://downloads.datastax.com/enterprise/dse-5.0.3-bin.tar.gz
+# you may want to replace dse-5.0.3-bin.tar.gz with the corresponding downloaded package name. When
 # downloaded, please remove the version number part of the filename (or create a symlink), so the
 # resulting file is named dse-bin.tar.gz (that way the docker file itself remains version independent).
 #
+# Run this command prior to building the container. Eg. the file should exist already.
+# ln -s dse-5.0.3-bin.tar.gz dse-bin.tar.gz
+#
 # DataStax Agent debian package can be downloaded from
-# wget --user=$USER --password=$PASS http://downloads.datastax.com/enterprise/datastax-agent_6.0.0_all.deb
+# Run this command prior to building the container. Eg. the file should exist already.
+# wget --user=$USER --password=$PASS http://debian.datastax.com/enterprise/pool/datastax-agent_6.0.3_all.deb
 # you may want to replace the specific version with the corresponding downloaded package name. When
 # downloaded, please remove the version number part of the filename (or create a symlink), so the
 # resulting file is named datastax-agent_all.deb (that way the docker file itself remains version
 # independent).
+#
+# Run this command prior to building the container. Eg. the file should exist already.
+#ln -s datastax-agent_6.0.3_all.deb datastax-agent_all.deb
+#
 ADD dse-bin.tar.gz /opt
 ADD datastax-agent_all.deb /tmp
 
@@ -102,3 +111,4 @@ EXPOSE 8012 50030 50060 9290
 EXPOSE 10000
 
 # Graph
+
